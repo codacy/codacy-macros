@@ -8,7 +8,7 @@ class json(mode:String="") extends StaticAnnotation{
   def macroTransform(annottees: Any*): Any = macro jsonMacro.impl
 }
 
-object jsonMacro{
+private[macros] object jsonMacro{
 
   def impl(c: Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
@@ -28,9 +28,9 @@ object jsonMacro{
     }
 
     def modifiedCompanion(compDeclOpt: Option[ModuleDef], format: ValDef, className: TypeName) = {
-      compDeclOpt.map{ case  q"object $obj extends ..$bases { ..$body }" =>
+      compDeclOpt.map{ case  q"$mods object $obj extends ..$bases { ..$body }" =>
         q"""
-          object $obj extends ..$bases {
+          $mods object $obj extends ..$bases {
             ..$body
             $format
           }
@@ -49,7 +49,7 @@ object jsonMacro{
           c.abort(c.enclosingPosition, "Cannot create json formatter for case class with no fields")
         case 1 if isValue =>
           q"""
-            implicit lazy val $valName = {
+            implicit lazy val $valName:play.api.libs.json.Format[$className]  = {
 
               import play.api.libs.json._
               Format(
@@ -59,7 +59,7 @@ object jsonMacro{
             }
           """
         case _ => q"""
-          implicit lazy val $valName = {
+          implicit lazy val $valName:play.api.libs.json.OFormat[$className] = {
             import play.api.libs.json._
             import codacy.util._
 
