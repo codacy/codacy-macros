@@ -1,52 +1,54 @@
-package codacy.macros
+package com.codacy.macros
 
-import language.experimental.macros
 import scala.annotation.StaticAnnotation
-import scala.reflect.macros.whitebox._
+import scala.language.experimental.macros
+import scala.reflect.macros.whitebox
 
-class json(mode:String="") extends StaticAnnotation{
+class json(mode: String = jsonMacro.defaultMode) extends StaticAnnotation {
   def macroTransform(annottees: Any*): Any = macro jsonMacro.impl
 }
 
-private[macros] object jsonMacro{
+private[macros] object jsonMacro {
 
-  def impl(c: Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
+  val defaultMode = "strict"
+
+  def impl(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
-    def extractClassNameAndFieldsAndIsValue(classDecl: ClassDef) = {
-      classDecl match{
-        case t@q"$mods class $tpname[..$tparams] $ctorMods(..$paramss) extends { ..$earlydefns } with ..$parents { $self => ..$stats }" =>
-          val isValueClass = parents.exists{
+    def extractClassNameAndFieldsAndIsValue(classDecl: ClassDef): (TypeName, List[ValDef], Boolean) = {
+      classDecl match {
+        case t@q"$mods class ${tpname: TypeName}[..$tparams] $ctorMods(..${paramss: List[ValDef]}) extends { ..$earlydefns } with ..$parents { $self => ..$stats }" =>
+          val isValueClass = parents.exists {
             case tq"AnyVal" => true
             case _ => false
           }
 
           (tpname, paramss, isValueClass)
         case _ =>
-          c.abort(c.enclosingPosition, "Annotation is not supported here")
+          c.abort(c.enclosingPosition, "annotation is not supported here")
       }
     }
 
     def modifiedCompanion(compDeclOpt: Option[ModuleDef], format: ValDef, className: TypeName) = {
-      compDeclOpt.map{ case  q"$mods object $obj extends ..$bases { ..$body }" =>
+      compDeclOpt.map { case q"$mods object $obj extends ..$bases { ..$body }" =>
         q"""
           $mods object $obj extends ..$bases {
             ..$body
             $format
           }
         """
-      }.getOrElse{
+      }.getOrElse {
         // Create a fresh companion object with the formatter
         q"object ${className.toTermName} { $format }"
       }
     }
 
-    def jsonFormatter(className: TypeName, fields: List[ValDef], isValue:Boolean) = {
+    def jsonFormatter(className: TypeName, fields: List[ValDef], isValue: Boolean) = {
       val valName = TermName(c.freshName("Format"))
 
       fields.length match {
         case 0 =>
-          c.abort(c.enclosingPosition, "Cannot create json formatter for case class with no fields")
+          c.abort(c.enclosingPosition, "cannot create json formatter for case class with no fields")
         case 1 if isValue =>
           q"""
             implicit lazy val $valName:play.api.libs.json.Format[$className]  = {
@@ -61,7 +63,7 @@ private[macros] object jsonMacro{
         case _ => q"""
           implicit lazy val $valName:play.api.libs.json.OFormat[$className] = {
             import play.api.libs.json._
-            import codacy.util._
+            import com.codacy.macros.utils._
 
             Json.format[$className].asOFormat
           }
@@ -73,34 +75,36 @@ private[macros] object jsonMacro{
       val (className, fields, isValue) = extractClassNameAndFieldsAndIsValue(classDecl)
 
       val asValue = c.prefix.tree match {
-        case q"new $_($mode)" =>
-          util.Try( c.eval[String](c.Expr(mode)) ).map{
+        case q"new $_(${mode: Tree})" =>
+          util.Try(c.eval[String](c.Expr(mode))).map {
             case "strict" =>
               false
             //if the class has only one field write a value
             case "value" =>
-              if(fields.length == 1)
+              if (fields.length == 1)
                 true
               else
                 c.abort(c.enclosingPosition, s"""cannot use value mode on class with more than 1 parameter""")
 
             case unknown =>
-              c.abort(c.enclosingPosition, s"""unknown mode: $unknown valid modes are: "strict" or "value", for default behaviour don't pass a parameter""")
+              c.abort(c.enclosingPosition, s"""unknown mode: $unknown. valid modes are: "strict" or "value", for default behaviour don't pass a parameter""")
           }.getOrElse(
             c.abort(c.enclosingPosition, s"""parameter has to be of type String""")
           )
-          //no parameter - default: if AnyVal write a value else write an object
-        case _ => isValue
+        //no parameter - default: if AnyVal write a value else write an object
+        case _ => defaultMode == "value" && isValue
       }
 
       val format = jsonFormatter(className, fields, asValue)
       val compDecl = modifiedCompanion(compDeclOpt, format, className)
 
       // Return both the class and companion object declarations
-      c.Expr(q"""
-        $classDecl
-        $compDecl
-      """)
+      c.Expr {
+        q"""
+          $classDecl
+          $compDecl
+        """
+      }
     }
 
     annottees.map(_.tree) match {
