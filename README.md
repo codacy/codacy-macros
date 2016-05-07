@@ -1,40 +1,28 @@
-default behavior:
+[![Codacy Badge](https://api.codacy.com/project/badge/grade/???)](https://www.codacy.com/app/Codacy/codacy-macros)
+[![Circle CI](https://circleci.com/gh/codacy/codacy-macros.svg?style=shield&circle-token=:circle-token)](https://circleci.com/gh/codacy/codacy-macros)
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.codacy/codacy-macros_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.codacy/codacy-macros_2.11)
 
-@json case class Foo(param1:String)
-@json case class Foo(param1:String, param2:Int)
-@json case class Foo(param1:String) extends AnyVal
-
-valid modes:
-@json("value") case class Foo(param1:String)
-@json("strict") case class Foo(param1:String) extends AnyVal
-
-
-//does not compile:
-@json("value") case class Foo(param1:String, param2:Int)
-
-//will compile but is superfluous:
-@json("strict") case class Foo(param1:String)
-@json("strict") case class Foo(param1:String, param2:Int)
-@json("value") case class Foo(param1:String) extends AnyVal
-
-
+# codacy-macros
+scala and play framework macros
 
 ### Setup
-add the following as a dependency to your sbt configuration:
+Add the following to your sbt configuration:
 
 ```scala
-libraryDependencies += "com.codacy" %% "play-dropwizard" % metricVersion
+libraryDependencies += "com.codacy" %% "codacy-macros" % version
+```
+```scala
+addCompilerPlugin(Dependencies.macroParadise cross CrossVersion.full)
 ```
 
 ### Usage
-start by adding the following import to your code
+Start by adding the following import to your code
 ```scala
-import codacy.metrics.dropwizard._
+import com.codacy.macros._
 ````
-and measure some code. timing for example you can do by:
+and then:
 ```scala
-val name = TimerName(myTimer)
-timed(name){ block }
+@json case class Form(title: String, message: String)
 ```
 
 
