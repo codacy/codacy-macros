@@ -15,21 +15,21 @@ private[macros] object jsonMacro {
   def impl(c: whitebox.Context)(annottees: c.Expr[Any]*): c.Expr[Any] = {
     import c.universe._
 
-    def extractClassNameAndFieldsAndIsValue(classDecl: ClassDef): (TypeName, List[ValDef], Boolean) = {
+    def extractClassNameAndFieldsAndIsValue(classDecl: ClassDef): (Modifiers, TypeName, List[ValDef], Boolean) = {
       classDecl match {
-        case t@q"$mods class ${tpname: TypeName}[..$tparams] $ctorMods(..${paramss: List[ValDef]}) extends { ..$earlydefns } with ..$parents { $self => ..$stats }" =>
+        case t@q"${mods: Modifiers} class ${tpname: TypeName}[..$tparams] $ctorMods(..${paramss: List[ValDef]}) extends { ..$earlydefns } with ..$parents { $self => ..$stats }" =>
           val isValueClass = parents.exists {
             case tq"AnyVal" => true
             case _ => false
           }
 
-          (tpname, paramss, isValueClass)
+          (mods, tpname, paramss, isValueClass)
         case _ =>
           c.abort(c.enclosingPosition, "annotation is not supported here")
       }
     }
 
-    def modifiedCompanion(compDeclOpt: Option[ModuleDef], format: ValDef, className: TypeName) = {
+    def modifiedCompanion(modifiers: Modifiers, compDeclOpt: Option[ModuleDef], format: ValDef, className: TypeName) = {
       compDeclOpt.map { case q"$mods object $obj extends ..$bases { ..$body }" =>
         q"""
           $mods object $obj extends ..$bases {
@@ -38,8 +38,16 @@ private[macros] object jsonMacro {
           }
         """
       }.getOrElse {
+        // TODO: Find a better way to exclude the `CASE` flag
+        import Flag._
+        val mods = modifiers match {
+          case _ if modifiers.hasFlag(PRIVATE) =>
+            Modifiers(PRIVATE)
+          case _ =>
+            Modifiers()
+        }
         // Create a fresh companion object with the formatter
-        q"object ${className.toTermName} { $format }"
+        q"$mods object ${className.toTermName} { $format }"
       }
     }
 
@@ -72,7 +80,7 @@ private[macros] object jsonMacro {
     }
 
     def modifiedDeclaration(classDecl: ClassDef, compDeclOpt: Option[ModuleDef] = None) = {
-      val (className, fields, isValue) = extractClassNameAndFieldsAndIsValue(classDecl)
+      val (modifiers, className, fields, isValue) = extractClassNameAndFieldsAndIsValue(classDecl)
 
       val asValue = c.prefix.tree match {
         case q"new $_(${mode: Tree})" =>
@@ -96,7 +104,7 @@ private[macros] object jsonMacro {
       }
 
       val format = jsonFormatter(className, fields, asValue)
-      val compDecl = modifiedCompanion(compDeclOpt, format, className)
+      val compDecl = modifiedCompanion(modifiers, compDeclOpt, format, className)
 
       // Return both the class and companion object declarations
       c.Expr {

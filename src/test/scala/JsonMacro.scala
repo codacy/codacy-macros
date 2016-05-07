@@ -18,6 +18,12 @@ import play.api.libs.json.{JsObject, Json}
 
 @json("value") case class JsonWrapperByParam(param1: JsObject) extends AnyVal
 
+object PrivateObjectScope {
+
+  @json private case class PrivateObject(param1: String, param2: Int)
+  private object PrivateObject
+
+}
 
 class JsonSpecs extends Specification {
 
