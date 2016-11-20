@@ -2,7 +2,7 @@ import sbt._
 
 object Dependencies{
 
-  val playVersion = "2.4.3"
+  val playVersion = "2.5.9"
 
   val playJson        = "com.typesafe.play"     %% "play-json"        % playVersion
   val macroParadise   = "org.scalamacros"       %% "paradise"         % "2.1.0"
