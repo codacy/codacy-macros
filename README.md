@@ -1,4 +1,4 @@
-[![Codacy Badge](https://api.codacy.com/project/badge/grade/027eb70aacb542ac836c88dbb4f10e78)](https://www.codacy.com/app/Codacy/codacy-macros)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/027eb70aacb542ac836c88dbb4f10e78)](https://www.codacy.com/gh/codacy/codacy-macros?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=codacy/codacy-macros&amp;utm_campaign=Badge_Grade)
 [![Circle CI](https://circleci.com/gh/codacy/codacy-macros.svg?style=shield&circle-token=:circle-token)](https://circleci.com/gh/codacy/codacy-macros)
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.codacy/codacy-macros_2.11/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.codacy/codacy-macros_2.11)
 
