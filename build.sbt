@@ -11,6 +11,7 @@ lazy val playVersion = settingKey[String]("The version of Play used for building
 
 ThisBuild / playVersion := play27
 ThisBuild / scalaVersion := scala212
+ThisBuild / crossScalaVersions := Seq(scala212, scala211)
 
 /**
   * Given a command it creates an alias to run the command
