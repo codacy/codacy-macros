@@ -1,0 +1,35 @@
+version: 2.1
+
+orbs:
+  codacy: codacy/base@5.1.3
+
+workflows:
+  version: 2
+  compile_test_deploy:
+    jobs:
+      - codacy/checkout_and_version:
+          write_sbt_version: true
+      - codacy/sbt:
+          name: check_format_populate_cache_and_compile
+          context: CodacyAWS
+          persist_to_workspace: true
+          cmd: |
+            sbt scalafmt::test sbt:scalafmt::test test:scalafmt::test crossTestCompile
+          requires:
+            - codacy/checkout_and_version
+      - codacy/sbt:
+          name: test
+          context: CodacyAWS
+          cmd: sbt crossTest
+          requires:
+            - check_format_populate_cache_and_compile
+      - codacy/sbt:
+          name: publish
+          context: CodacyAWS
+          cmd: sbt retrieveGPGKeys crossPublishSigned sonatypeBundleRelease
+          requires:
+            - test
+          filters:
+            branches:
+              only:
+                - master
