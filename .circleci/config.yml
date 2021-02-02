@@ -29,7 +29,7 @@ workflows:
           cmd: sbt retrieveGPGKeys crossPublishSigned sonatypeBundleRelease
           requires:
             - test
-          filters:
-            branches:
-              only:
-                - master
+          # filters:
+          #   branches:
+          #     only:
+          #       - master
