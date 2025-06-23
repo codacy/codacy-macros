@@ -1,5 +1,5 @@
-val scala211 = "2.11.12"
-val scala212 = "2.12.11"
+val scala211 = "2.11.11"
+val scala212 = "2.12.20"
 
 val play24 = "2.4.3"
 val play25 = "2.5.19"
