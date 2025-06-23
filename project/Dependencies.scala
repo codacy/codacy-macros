@@ -1,6 +1,6 @@
 import sbt._
 
-object Dependencies{
+object Dependencies {
 
   def playJson(playVersion: String) = "com.typesafe.play" %% "play-json" % playVersion
 

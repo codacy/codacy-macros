@@ -14,7 +14,7 @@ workflows:
           context: CodacyAWS
           persist_to_workspace: true
           cmd: |
-            sbt scalafmt::test sbt:scalafmt::test test:scalafmt::test crossTestCompile
+            sbt scalafmtSbtCheck scalafmtCheckAll crossTestCompile
           requires:
             - codacy/checkout_and_version
       - codacy/sbt:
