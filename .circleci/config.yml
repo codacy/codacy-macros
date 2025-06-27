@@ -26,6 +26,7 @@ workflows:
       - codacy/sbt:
           name: publish
           context: CodacyAWS
+          no_output_timeout: "30m"
           cmd: sbt retrieveGPGKeys crossPublishSigned sonatypeCentralRelease
           requires:
             - test
